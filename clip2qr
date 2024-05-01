@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Display the content of the primary selection (clipboard) as a QR code.
+# Especially useful for URLs.
+# X only -- neither xsel nor feh work on Wayland.
+
+xsel -p | qrencode -o- | feh - -Z

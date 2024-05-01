@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Highlight matching text in the output.
+# Usage:
+#   echo foobarbaz | hi foo baz
+#
+# Could also just be an alias...
+
+grep --color -E "$(printf "%s|" "$@")$"

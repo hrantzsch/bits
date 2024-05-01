@@ -1,0 +1,65 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: [\$DIFFTOOL=tool] $(basename "$0") [--no-layout] FILE1 FILE2"
+  echo
+  echo "Diff two PDFs using pdftotext and the specified diff tool."
+  echo
+  echo "Options:"
+  echo "  --no-layout  Do not use pdftotext's -layout option (smaller diff but less readable)"
+  echo "  -h, --help   Display this help message"
+  echo
+  echo "The diff will be created using either \$DIFFTOOL, the diff.tool configured for git, or 'diff'."
+}
+
+if ! command -v pdftotext &> /dev/null; then
+  echo "pdftotext not be found"
+  exit
+fi
+
+layout="-layout"
+file1=""
+file2=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -h | --help)
+      usage; exit 0
+      ;;
+    --no-layout)
+      unset layout
+      shift
+      ;;
+    *)
+      if [ -z "$file1" ]; then
+        file1="$1"
+      elif [ -z "$file2" ]; then
+        file2="$1"
+      else
+        usage; exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+for file in "$file1" "$file2"; do
+  if [ -z "$file" ]; then
+    usage; exit 1
+  fi
+  if [ ! -f "$file" ]; then
+    echo "File not found: '""$file""'"; exit 1
+  fi
+done
+
+left=$(mktemp --tmpdir=/tmp "$(basename -s ".pdf" "$file1").XXXXXX.txt")
+right=$(mktemp --tmpdir=/tmp "$(basename -s ".pdf" "$file2").XXXXXX.txt")
+
+pdftotext $layout "$file1" "$left"
+pdftotext $layout "$file2" "$right"
+
+DIFFTOOL="${DIFFTOOL:-$(git config --get diff.tool)}"
+DIFFTOOL="${DIFFTOOL:-diff}"
+$DIFFTOOL "$left" "$right"
+
+rm "$left" "$right"

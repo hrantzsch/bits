@@ -1,0 +1,69 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: $(basename "$0") [-o output_file] [-s pdf_settings] input_file"
+  echo
+  echo "Reduce PDF file size using ghostscript."
+  echo
+  echo "Options:"
+  echo "  -o output_file   Specify the output file name (default: input_file_smaller.pdf)"
+  echo "  -s pdf_settings  Specify the '-dPDFSETTINGS' passed to gs (accepts /ebook, /screen, or /printer; default: /screen)"
+  echo "  -h               Display this help message"
+}
+
+while getopts "o:s:h" opt; do
+  case $opt in
+    o) DESTINATION="$OPTARG" ;;
+    s) PDFSETTINGS="$OPTARG" ;;
+    h) usage; exit 0 ;;
+    *) usage; exit 1 ;;
+  esac
+done
+
+shift "$((OPTIND - 1))"
+
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+  echo "Missing input file."
+  usage; exit 1
+fi
+
+if [ ! -f "$TARGET" ]; then
+  echo "Input file does not exist or is not a regular file."
+  exit 1
+fi
+
+if [ -z "$DESTINATION" ]; then
+  DESTINATION="$(basename -s .pdf "$TARGET")_smaller.pdf"
+fi
+
+if [ -e "$DESTINATION" ]; then
+  read -r -p "Output file '$DESTINATION' already exists. Overwrite? [y/N]: " confirm
+  if [[ "$confirm" != [yY] ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+fi
+
+if [ -z "$PDFSETTINGS" ]; then
+  PDFSETTINGS="/screen"
+elif [[ "$PDFSETTINGS" != "/screen" && "$PDFSETTINGS" != "/ebook" && "$PDFSETTINGS" != "/printer" ]]; then
+  echo "Invalid PDFSETTINGS value. Must be one of: /screen, /ebook, /printer"
+  exit 1
+fi
+
+TEMP=$(mktemp --tmpdir=/tmp "$(basename -s ".pdf" "$TARGET").XXXXXX.pdf")
+
+gs -q -sDEVICE=pdfwrite \
+  -dNOPAUSE -dBATCH \
+  -dPDFSETTINGS="$PDFSETTINGS" \
+  -sOutputFile="$TEMP" \
+  "$TARGET"
+
+if [ ! -s "$TEMP" ]; then
+  echo "Failed to shrink PDF."
+  rm -- "$TEMP"
+  exit 1
+fi
+
+mv "$TEMP" "$DESTINATION"
