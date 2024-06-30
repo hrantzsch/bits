@@ -7,7 +7,7 @@ usage() {
   echo
   echo "Options:"
   echo "  -o output_file   Specify the output file name (default: input_file_smaller.pdf)"
-  echo "  -s pdf_settings  Specify the '-dPDFSETTINGS' passed to gs (accepts /ebook, /screen, or /printer; default: /screen)"
+  echo "  -s pdf_settings  Specify the '-dPDFSETTINGS' passed to gs (accepts /ebook, /screen, or /printer; default: /ebook)"
   echo "  -h               Display this help message"
 }
 
@@ -46,7 +46,7 @@ if [ -e "$DESTINATION" ]; then
 fi
 
 if [ -z "$PDFSETTINGS" ]; then
-  PDFSETTINGS="/screen"
+  PDFSETTINGS="/ebook"
 elif [[ "$PDFSETTINGS" != "/screen" && "$PDFSETTINGS" != "/ebook" && "$PDFSETTINGS" != "/printer" ]]; then
   echo "Invalid PDFSETTINGS value. Must be one of: /screen, /ebook, /printer"
   exit 1
