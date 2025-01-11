@@ -2,6 +2,14 @@
 #
 # Display the content of the primary selection (clipboard) as a QR code.
 # Especially useful for URLs.
-# X only -- neither xsel nor feh work on Wayland.
+# Needs xsel/wl-paste, qrencode and imv.
 
-xsel -p | qrencode -o- | feh - -Z
+img=$(mktemp --suffix=.png)
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+    wl-paste -p | qrencode -o "$img"
+else
+    xsel -p | qrencode -o "$img"
+fi
+
+imv "$img"
+rm "$img"
